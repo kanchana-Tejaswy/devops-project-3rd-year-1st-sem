@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareQueue — Hospital Queue Management System</title>
+  <meta name="application-name" content="SmartQueue">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- ==================================================================== -->
+  <!-- TOP APPLICATION NAVBAR -->
+  <!-- ==================================================================== -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">
+          <!-- Hospital Cross / Medical Shield SVG -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 6v12M6 12h12"/>
+            <rect x="3" y="3" width="18" height="18" rx="5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">Care<strong>Queue</strong></span>
+          <span class="brand-badge">Hospital Edition</span>
+        </div>
+      </div>
+
+      <!-- Mode Switcher Navigation Tabs -->
+      <nav class="nav-tabs" role="tablist" aria-label="Hospital Station Mode">
+        <button class="nav-tab-btn active" data-tab-target="visitor" role="tab" aria-selected="true" id="tab-btn-visitor">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <line x1="19" y1="8" x2="19" y2="14"/>
+            <line x1="22" y1="11" x2="16" y2="11"/>
+          </svg>
+          Patient Check-in
+        </button>
+        <button class="nav-tab-btn" data-tab-target="admin" role="tab" aria-selected="false" id="tab-btn-admin">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+            <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+            <circle cx="20" cy="10" r="2"/>
+          </svg>
+          Staff Dashboard
+        </button>
+        <button class="nav-tab-btn" data-tab-target="display" role="tab" aria-selected="false" id="tab-btn-display">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+          Public Display
+        </button>
+      </nav>
+
+      <!-- Department Selector & Global Controls -->
+      <div class="header-actions">
+        <label for="global-dept-select" class="sr-only">Select Clinical Department</label>
+        <div class="select-wrapper">
+          <select id="global-dept-select" class="header-select" aria-label="Select Clinical Department">
+            <option value="admin">OPD Registration &amp; Triage (A)</option>
+            <option value="fee">Pharmacy &amp; Billing (F)</option>
+            <option value="lab">Diagnostic Pathology &amp; Imaging (L)</option>
+          </select>
+        </div>
+
+        <button id="sound-toggle-btn" class="btn-icon" aria-label="Toggle announcement sound" title="Sound: ON">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          </svg>
+          <span class="btn-label">Chime: ON</span>
+        </button>
+
+        <button id="reset-demo-data-btn" class="btn-outline-danger" title="Restore sample hospital queues">
+          Reset Demo
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================================================================== -->
+  <!-- PERSISTENCE DEMO NOTICE BANNER -->
+  <!-- ==================================================================== -->
+  <aside class="info-banner" role="complementary" aria-label="System Notice">
+    <div class="banner-inner">
+      <span class="banner-icon-svg" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      </span>
+      <p class="banner-text">
+        <strong>Hospital Simulation Environment:</strong> Patient tokens, queue sequencing, and department metrics are persisted locally in <code>LocalStorage</code>. No real patient health records (PHI) are collected or transmitted.
+      </p>
+    </div>
+  </aside>
+
+  <!-- ==================================================================== -->
+  <!-- MAIN CONTENT CONTAINER -->
+  <!-- ==================================================================== -->
+  <main class="main-content">
+
+    <!-- ------------------------------------------------------------------ -->
+    <!-- VIEW 1: PATIENT CHECK-IN (SELF-CHECK & RECEPTIONIST REGISTRATION)   -->
+    <!-- ------------------------------------------------------------------ -->
+    <section id="tab-view-visitor" class="tab-view active" role="tabpanel" aria-labelledby="tab-btn-visitor">
+      
+      <!-- Clinical Department Switcher Pills -->
+      <div class="dept-pills-row" role="radiogroup" aria-label="Choose hospital department">
+        <button class="visitor-dept-pill active" data-dept-id="admin" role="radio" aria-checked="true">
+          <span class="pill-icon-svg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+              <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+              <circle cx="20" cy="10" r="2"/>
+            </svg>
+          </span>
+          <div class="pill-text">
+            <span class="pill-title">OPD Registration &amp; Triage</span>
+            <span class="pill-code">Prefix A • Desk 1</span>
+          </div>
+        </button>
+        <button class="visitor-dept-pill" data-dept-id="fee" role="radio" aria-checked="false">
+          <span class="pill-icon-svg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/>
+              <path d="m8.5 8.5 7 7"/>
+            </svg>
+          </span>
+          <div class="pill-text">
+            <span class="pill-title">Pharmacy &amp; Billing</span>
+            <span class="pill-code">Prefix F • Counter 2</span>
+          </div>
+        </button>
+        <button class="visitor-dept-pill" data-dept-id="lab" role="radio" aria-checked="false">
+          <span class="pill-icon-svg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/>
+              <path d="M8.5 2h7"/>
+              <path d="M7 16h10"/>
+            </svg>
+          </span>
+          <div class="pill-text">
+            <span class="pill-title">Diagnostic Pathology &amp; Imaging</span>
+            <span class="pill-code">Prefix L • Counter 3</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Live Department Status Overview Card -->
+      <div class="card visitor-overview-card">
+        <div class="overview-header">
+          <div>
+            <div class="counter-badge-tag font-mono" id="visitor-counter-badge">Desk 1 — Triage &amp; Consultation</div>
+            <h1 class="overview-title" id="visitor-dept-title">Outpatient Registration &amp; Triage</h1>
+            <p class="overview-desc" id="visitor-dept-desc">Patient check-in, initial nurse triage, vital assessments, and consultation routing.</p>
+          </div>
+        </div>
+
+        <div class="overview-stats-grid">
+          <div class="overview-stat-box highlight">
+            <span class="stat-label">Currently Serving</span>
+            <span class="stat-value font-mono" id="visitor-serving-token">A002</span>
+          </div>
+          <div class="overview-stat-box">
+            <span class="stat-label">Patients Waiting</span>
+            <span class="stat-value font-mono" id="visitor-waiting-count">1</span>
+          </div>
+          <div class="overview-stat-box">
+            <span class="stat-label">Estimated Wait</span>
+            <span class="stat-value font-mono" id="visitor-est-wait">~6 mins</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-Column Layout: Check-in Station & Active Token Ticket -->
+      <div class="visitor-grid">
+
+        <!-- Column 1: Check-in Station (Self Check-in OR Receptionist Registration) -->
+        <div class="card action-card">
+          <div class="card-header-styled">
+            <div class="checkin-mode-toggle" role="tablist" aria-label="Check-in Type Switcher">
+              <button id="checkin-mode-self" class="mode-tab-btn active" role="tab" aria-selected="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Patient Self-Check-in
+              </button>
+              <button id="checkin-mode-reception" class="mode-tab-btn" role="tab" aria-selected="false">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="4" width="20" height="16" rx="2"/>
+                  <path d="M7 15h0M2 9.5h20"/>
+                </svg>
+                Receptionist Desk
+              </button>
+            </div>
+          </div>
+
+          <!-- Mode A: Patient Self-Check-in Panel -->
+          <div id="self-checkin-panel" class="checkin-form-panel">
+            <p class="panel-instruction">Select your visit category and generate a queue token slip.</p>
+            
+            <div class="form-group">
+              <label for="token-purpose-input" class="form-label">Visit Reason / Service Category</label>
+              <input 
+                type="text" 
+                id="token-purpose-input" 
+                class="form-input" 
+                placeholder="e.g., General Consultation, Follow-up, Prescription Refill..." 
+                maxlength="60"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="token-patient-ref-input" class="form-label">Simulated Patient ID / MRN (Optional)</label>
+              <input 
+                type="text" 
+                id="token-patient-ref-input" 
+                class="form-input font-mono" 
+                placeholder="e.g., MRN-8421 (leave blank to auto-generate)" 
+                maxlength="20"
+              >
+            </div>
+
+            <button id="generate-token-btn" class="btn btn-primary btn-large w-full">
+              <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="16"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
+              Generate Patient Token
+            </button>
+          </div>
+
+          <!-- Mode B: Receptionist Desk Registration Panel -->
+          <div id="reception-checkin-panel" class="checkin-form-panel" style="display: none;">
+            <p class="panel-instruction">Front-desk intake: register patient details and issue clinic token.</p>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="reception-patient-name" class="form-label">Patient Name / Initials</label>
+                <input 
+                  type="text" 
+                  id="reception-patient-name" 
+                  class="form-input" 
+                  placeholder="e.g., Alex Johnson" 
+                  maxlength="40"
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="reception-patient-mrn" class="form-label">Patient MRN (Simulated)</label>
+                <input 
+                  type="text" 
+                  id="reception-patient-mrn" 
+                  class="form-input font-mono" 
+                  placeholder="e.g., MRN-4092" 
+                  maxlength="20"
+                >
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="reception-visit-category" class="form-label">Clinic Specialty</label>
+                <select id="reception-visit-category" class="form-input">
+                  <option value="General Outpatient">General Outpatient (OPD)</option>
+                  <option value="Specialist Referral">Specialist Referral</option>
+                  <option value="Follow-up Review">Follow-up Review</option>
+                  <option value="Nurse Triage / Vitals">Nurse Triage / Vitals</option>
+                  <option value="Pharmacy Clearance">Pharmacy Clearance</option>
+                  <option value="Diagnostic Specimen">Diagnostic Specimen</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="reception-priority" class="form-label">Triage Priority</label>
+                <select id="reception-priority" class="form-input">
+                  <option value="Normal">Normal Walk-in</option>
+                  <option value="Priority">Priority (Elderly / Pediatric)</option>
+                </select>
+              </div>
+            </div>
+
+            <button id="reception-register-btn" class="btn btn-primary btn-large w-full">
+              <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <polyline points="16 11 18 13 22 9"/>
+              </svg>
+              Register Patient &amp; Issue Token
+            </button>
+          </div>
+
+          <div class="kiosk-footer-notes">
+            <p>
+              <svg class="check-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Sequential token issuance adhering to hospital triage order
+            </p>
+            <p>
+              <svg class="check-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Live call announcements displayed on digital waiting room monitors
+            </p>
+          </div>
+        </div>
+
+        <!-- Column 2: Patient's Active Token Slip (or Empty State) -->
+        <div class="ticket-display-container">
+          
+          <!-- When Patient Has an Active Token -->
+          <article id="visitor-ticket-card" class="ticket-card" style="display: none;" aria-live="polite">
+            <div class="ticket-cutout-top"></div>
+            <div class="ticket-header">
+              <span class="ticket-kiosk-tag">CAREQUEUE • HOSPITAL PASS</span>
+              <div id="ticket-status-badge" class="status-pill status-waiting">Waiting in Queue</div>
+            </div>
+
+            <div class="ticket-body">
+              <div class="ticket-mode-badge" id="ticket-checkin-type">Patient Self-Check-in</div>
+              <div class="ticket-number-label">PATIENT TOKEN NUMBER</div>
+              <div class="ticket-number font-mono" id="ticket-token-display">A003</div>
+              <div class="ticket-dept" id="ticket-dept-name">Outpatient Registration &amp; Triage</div>
+              <div class="ticket-counter font-mono" id="ticket-counter-name">Desk 1 — Triage &amp; Consultation</div>
+            </div>
+
+            <!-- Dynamic Alert for Serving/Waiting -->
+            <div id="ticket-callout-banner" class="ticket-alert alert-waiting">
+              <!-- Dynamically populated -->
+            </div>
+
+            <div class="ticket-meta-grid">
+              <div>
+                <span class="meta-label">Patient Ref / MRN</span>
+                <span class="meta-val font-mono" id="ticket-patient-ref">MRN-9034</span>
+              </div>
+              <div>
+                <span class="meta-label">Check-in Time</span>
+                <span class="meta-val font-mono" id="ticket-issue-time">10:30 AM</span>
+              </div>
+              <div class="full-width">
+                <span class="meta-label">Service Purpose</span>
+                <span class="meta-val" id="ticket-purpose">General Outpatient Visit</span>
+              </div>
+            </div>
+
+            <div class="ticket-actions">
+              <button id="visitor-print-btn" class="btn btn-secondary btn-sm">
+                <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 6 2 18 2 18 9"/>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                  <rect x="6" y="14" width="12" height="8"/>
+                </svg>
+                Print Slip
+              </button>
+              <button id="visitor-cancel-token-btn" class="btn btn-danger-outline btn-sm">
+                Cancel Token
+              </button>
+              <button id="visitor-dismiss-btn" class="btn btn-ghost btn-sm">
+                New Check-in
+              </button>
+            </div>
+            <div class="ticket-cutout-bottom"></div>
+          </article>
+
+          <!-- Empty State (No Active Token Generated) -->
+          <div id="visitor-empty-state" class="card empty-state-card">
+            <div class="empty-icon-box">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="4" width="18" height="16" rx="3"/>
+                <line x1="7" y1="8" x2="17" y2="8"/>
+                <line x1="7" y1="12" x2="13" y2="12"/>
+              </svg>
+            </div>
+            <h3 class="empty-title">No Active Patient Token</h3>
+            <p class="empty-desc">
+              You haven't generated a queue token for this clinic yet. Use the check-in form to join the patient queue.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ------------------------------------------------------------------ -->
+    <!-- VIEW 2: STAFF DASHBOARD & QUEUE MANAGEMENT CONSOLE                  -->
+    <!-- ------------------------------------------------------------------ -->
+    <section id="tab-view-admin" class="tab-view" role="tabpanel" aria-labelledby="tab-btn-admin">
+      
+      <!-- Staff Console Header Bar -->
+      <div class="admin-top-bar">
+        <div>
+          <span class="admin-badge">CLINICAL STAFF CONSOLE</span>
+          <h1 class="admin-dept-heading" id="admin-dept-title">Outpatient Registration &amp; Triage — Staff Console</h1>
+          <p class="admin-counter-sub font-mono" id="admin-counter-name">Desk 1 — Triage &amp; Consultation</p>
+        </div>
+        <div class="admin-top-actions">
+          <button id="admin-reset-dept-btn" class="btn btn-outline-danger btn-sm">
+            Reset Clinic Queue
+          </button>
+        </div>
+      </div>
+
+      <!-- Real-time Department Statistics Cards -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-card-title">Waiting in Line</span>
+          <span class="stat-card-number text-amber font-mono" id="stat-waiting-count">1</span>
+          <span class="stat-card-sub">Pending triage call</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-title">Currently Serving</span>
+          <span class="stat-card-number text-teal font-mono" id="stat-serving-count">1</span>
+          <span class="stat-card-sub">Active at desk</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-title">Completed Today</span>
+          <span class="stat-card-number text-emerald font-mono" id="stat-completed-count">1</span>
+          <span class="stat-card-sub">Consultations finished</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-title">No-Show / Cancelled</span>
+          <span class="stat-card-number text-rose font-mono" id="stat-cancelled-count">0</span>
+          <span class="stat-card-sub">Closed without consult</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-title">Total Registered</span>
+          <span class="stat-card-number font-mono" id="stat-total-count">3</span>
+          <span class="stat-card-sub">Session intake count</span>
+        </div>
+      </div>
+
+      <!-- Counter Action Center (Active Service Window & Operational Rules) -->
+      <div class="admin-actions-grid">
+        
+        <!-- Active Consultation Window Box -->
+        <div class="card admin-control-card">
+          <div class="control-header">
+            <h2 class="control-title">Active Consultation Window</h2>
+            <button id="admin-recall-btn" class="btn btn-secondary btn-sm" title="Re-announce patient token" disabled>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              Re-announce
+            </button>
+          </div>
+
+          <div id="admin-serving-display" class="serving-display-container">
+            <!-- Dynamically populated -->
+          </div>
+
+          <div class="operator-buttons-row">
+            <button id="admin-call-next-btn" class="btn btn-primary btn-large">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              </svg>
+              Call Next Patient
+            </button>
+            <button id="admin-complete-btn" class="btn btn-success btn-large" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Complete Service
+            </button>
+            <button id="admin-noshow-btn" class="btn btn-warning-outline btn-large" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+              </svg>
+              Mark No-Show
+            </button>
+          </div>
+        </div>
+
+        <!-- Clinical Queue Operations Guide -->
+        <div class="card admin-tips-card">
+          <h2 class="control-title">Hospital Queue Management Protocol</h2>
+          <ul class="admin-guidelines-list">
+            <li>
+              <strong>Sequential Calling:</strong> Patients are called strictly by sequence order (FIFO) within each clinic queue.
+            </li>
+            <li>
+              <strong>Single Serving Constraint:</strong> Only one patient token can be active in consultation at this station. Complete or mark no-show before calling the next patient.
+            </li>
+            <li>
+              <strong>No-Show Management:</strong> If an announced patient does not appear after calling, use <em>Mark No-Show</em> to immediately release the window.
+            </li>
+            <li>
+              <strong>Audit History:</strong> Completed, cancelled, and no-show records remain logged in the table below for session verification.
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Queue Table Section with Filter Tabs -->
+      <div class="card table-card">
+        <div class="table-header-row">
+          <div>
+            <h2 class="table-section-title">Patient Queue Registry</h2>
+            <p class="table-section-sub">Real-time log of all patient tokens issued in this clinic session.</p>
+          </div>
+
+          <!-- Filter Pills -->
+          <div class="admin-filter-pills" role="tablist">
+            <button class="admin-filter-pill active" data-filter="all">All (<span class="pill-count">0</span>)</button>
+            <button class="admin-filter-pill" data-filter="waiting">Waiting (<span class="pill-count">0</span>)</button>
+            <button class="admin-filter-pill" data-filter="serving">Serving (<span class="pill-count">0</span>)</button>
+            <button class="admin-filter-pill" data-filter="completed">Completed (<span class="pill-count">0</span>)</button>
+            <button class="admin-filter-pill" data-filter="cancelled">Cancelled / No-Show (<span class="pill-count">0</span>)</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="queue-table">
+            <thead>
+              <tr>
+                <th scope="col">Token #</th>
+                <th scope="col">Patient Ref / MRN</th>
+                <th scope="col">Service Purpose</th>
+                <th scope="col">Mode</th>
+                <th scope="col">Issued Time</th>
+                <th scope="col">Wait / Service Time</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="table-col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="queue-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ------------------------------------------------------------------ -->
+    <!-- VIEW 3: PUBLIC WAITING ROOM DISPLAY BOARD                           -->
+    <!-- ------------------------------------------------------------------ -->
+    <section id="tab-view-display" class="tab-view" role="tabpanel" aria-labelledby="tab-btn-display">
+      
+      <div class="display-header">
+        <div>
+          <span class="display-live-indicator"><span class="status-dot"></span> LIVE HOSPITAL WAITING BOARD</span>
+          <h1 class="display-dept-heading" id="board-current-dept">Outpatient Registration &amp; Triage</h1>
+          <p class="display-counter-sub font-mono" id="board-current-counter">Desk 1 — Triage &amp; Consultation</p>
+        </div>
+        <div class="display-time-container">
+          <span class="display-time-label">LOCAL CLINIC TIME</span>
+          <div class="display-time font-mono" id="display-clock">--:--:--</div>
+        </div>
+      </div>
+
+      <div class="display-main-grid">
+        <!-- Giant Now Serving Billboard -->
+        <div class="card board-now-serving-card">
+          <div class="board-badge">NOW SERVING</div>
+          <div class="board-big-token pulse-glow font-mono" id="board-serving-number">A002</div>
+          <div class="board-instruction">Please proceed to consultation desk immediately</div>
+        </div>
+
+        <!-- Next in Line Column -->
+        <div class="card board-upcoming-card">
+          <div class="board-card-title">NEXT IN LINE (WAITING)</div>
+          <ul class="board-upcoming-list" id="board-upcoming-list">
+            <!-- Dynamically populated -->
+          </ul>
+        </div>
+      </div>
+
+      <!-- Hospital Multi-Department Board -->
+      <div class="board-overview-section">
+        <h2 class="board-section-heading">Hospital Outpatient Department Monitors</h2>
+        <div class="board-departments-grid" id="board-departments-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ==================================================================== -->
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <!-- ==================================================================== -->
+  <div id="toast" class="toast" role="alert" aria-live="polite"></div>
+
+  <!-- ==================================================================== -->
+  <!-- ACCESSIBLE CONFIRMATION MODAL DIALOG -->
+  <!-- ==================================================================== -->
+  <div id="confirm-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-icon-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <h3 id="modal-title" class="modal-title">Confirm Action</h3>
+      </div>
+      <p id="modal-message" class="modal-message">Are you sure you want to proceed with this queue action?</p>
+      <div class="modal-actions">
+        <button id="modal-cancel-btn" class="btn btn-secondary">Cancel</button>
+        <button id="modal-confirm-btn" class="btn btn-danger">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- JAVASCRIPT APPLICATION SCRIPT -->
+  <!-- ==================================================================== -->
+  <script src="app.js"></script>
+</body>
+</html>

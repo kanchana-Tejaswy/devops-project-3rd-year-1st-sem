@@ -1,0 +1,11 @@
+.git
+.github
+node_modules
+tests
+*.md
+.gitignore
+.dockerignore
+.DS_Store
+Thumbs.db
+powershell.cmd
+

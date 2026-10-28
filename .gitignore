@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment and local files
+.env
+.env.local
+
+# Operating System files
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Test coverage & logs
+coverage/
+*.log
+npm-debug.log*
+
+# Local bridge helpers & scratch scripts
+powershell.cmd
+scratch/
